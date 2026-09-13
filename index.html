@@ -575,9 +575,15 @@
           var text = res[0].transcript.trim();
           if (text) {
             clearExamplesIfAny();
-            var item = { id: nextId++, en: text, th: '', thStatus: 'pending', time: new Date(), example: false };
-            lines.push(item);
-            enqueueTranslate(item);
+            var lastReal = lines.length ? lines[lines.length - 1] : null;
+            var isDuplicate = lastReal && !lastReal.example
+              && lastReal.en.trim().toLowerCase() === text.toLowerCase()
+              && (new Date() - lastReal.time) < 4000;
+            if (!isDuplicate) {
+              var item = { id: nextId++, en: text, th: '', thStatus: 'pending', time: new Date(), example: false };
+              lines.push(item);
+              enqueueTranslate(item);
+            }
           }
           interim = '';
         } else {
