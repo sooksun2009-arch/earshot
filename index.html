@@ -217,7 +217,7 @@
     padding: 9px 12px;
     font-size: 0.95rem;
     line-height: 1.4;
-    max-height: 100px;
+    max-height: 160px;
   }
   #thaiInput:focus { border-color: var(--focus); }
 
@@ -255,7 +255,7 @@
       flex-direction: column;
     }
     .composer-row { flex-direction: column; align-items: stretch; }
-    #thaiInput { max-height: 140px; }
+    #thaiInput { max-height: 220px; }
     .suggestions { flex: 1; overflow-y: auto; }
   }
 
@@ -648,10 +648,11 @@
 
   // --- Reply composer ---
 
-  thaiInput.addEventListener('input', function () {
+  function autoGrowThaiInput() {
     thaiInput.style.height = 'auto';
-    thaiInput.style.height = Math.min(thaiInput.scrollHeight, 140) + 'px';
-  });
+    thaiInput.style.height = Math.min(thaiInput.scrollHeight + 2, 220) + 'px';
+  }
+  thaiInput.addEventListener('input', autoGrowThaiInput);
   thaiInput.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendBtn.click(); }
   });
@@ -670,6 +671,7 @@
     dictRecog.onresult = function (event) {
       var text = event.results[0][0].transcript;
       thaiInput.value = (thaiInput.value ? thaiInput.value + ' ' : '') + text;
+      autoGrowThaiInput();
     };
     dictRecog.onerror = function (event) {
       if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
