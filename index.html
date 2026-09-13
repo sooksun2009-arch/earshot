@@ -288,6 +288,16 @@
   }
   .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
   .modal-note { font-size: 0.75rem; color: var(--ink-dim); margin-top: 10px; line-height: 1.5; }
+  .modal-section-label { font-size: 0.78rem; font-weight: 600; color: var(--ink-dim); margin: 16px 0 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .modal select {
+    width: 100%;
+    border: 1px solid var(--border);
+    background: var(--bg-raised);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
 </style>
 </head>
 <body>
@@ -330,6 +340,10 @@
       <button id="closeSettingsBtn" class="btn">ปิด</button>
     </div>
     <div class="modal-note">หาคีย์ได้ที่หน้า API Keys ใน Anthropic Console ของบัญชีคุณ การเรียกแต่ละครั้งมีค่าใช้จ่ายตามราคาโมเดล Sonnet 5</div>
+
+    <div class="modal-section-label">เสียงอ่านคำแนะนำ (🔊)</div>
+    <select id="voiceSelect"></select>
+    <div class="modal-note">รายชื่อเสียงมาจากเบราว์เซอร์/อุปกรณ์ของคุณเอง ลองเลือกดูว่าเสียงไหนฟังดูเป็นชาย/หญิงตามที่ต้องการ — เสียงจะไม่เหมือนคนที่คุณคุยด้วยจริง ๆ (ต้องใช้ voice cloning ซึ่งเป็นคนละเทคโนโลยีและต้องได้รับความยินยอมจากเจ้าของเสียง)</div>
   </div>
 </div>
 
@@ -345,6 +359,7 @@
   var settingsBtn = document.getElementById('settingsBtn');
   var settingsModal = document.getElementById('settingsModal');
   var apiKeyInput = document.getElementById('apiKeyInput');
+  var voiceSelect = document.getElementById('voiceSelect');
   var saveKeyBtn = document.getElementById('saveKeyBtn');
   var clearKeyBtn = document.getElementById('clearKeyBtn');
   var closeSettingsBtn = document.getElementById('closeSettingsBtn');
@@ -374,6 +389,36 @@
   function setApiKey(k) { try { localStorage.setItem(KEY_STORAGE, k); } catch (e) {} }
   function clearApiKey() { try { localStorage.removeItem(KEY_STORAGE); } catch (e) {} }
 
+  var VOICE_STORAGE = 'earshot_tts_voice_uri';
+  function getSavedVoiceURI() { try { return localStorage.getItem(VOICE_STORAGE) || ''; } catch (e) { return ''; } }
+  function setSavedVoiceURI(uri) { try { localStorage.setItem(VOICE_STORAGE, uri); } catch (e) {} }
+
+  function populateVoices() {
+    if (!window.speechSynthesis) return;
+    var voices = window.speechSynthesis.getVoices().filter(function (v) { return /^en/i.test(v.lang); });
+    var saved = getSavedVoiceURI();
+    voiceSelect.innerHTML = '';
+    if (!voices.length) {
+      var opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = 'ยังไม่มีเสียงให้เลือก (ลองเปิด/ปิดหน้าต่างนี้ใหม่)';
+      voiceSelect.appendChild(opt);
+      return;
+    }
+    voices.forEach(function (v) {
+      var opt = document.createElement('option');
+      opt.value = v.voiceURI;
+      opt.textContent = v.name + ' (' + v.lang + ')';
+      if (v.voiceURI === saved) opt.selected = true;
+      voiceSelect.appendChild(opt);
+    });
+  }
+  if (window.speechSynthesis) {
+    populateVoices();
+    window.speechSynthesis.addEventListener('voiceschanged', populateVoices);
+  }
+  voiceSelect.addEventListener('change', function () { setSavedVoiceURI(voiceSelect.value); });
+
   function showBanner(text, opts) {
     banner.innerHTML = '';
     banner.appendChild(document.createTextNode(text));
@@ -389,6 +434,7 @@
 
   function openSettings() {
     apiKeyInput.value = getApiKey();
+    populateVoices();
     settingsModal.hidden = false;
     apiKeyInput.focus();
   }
@@ -782,7 +828,9 @@
       speak.addEventListener('click', function () {
         if (!window.speechSynthesis) return;
         var u = new SpeechSynthesisUtterance(String(item.text || ''));
-        u.lang = 'en-US';
+        var savedURI = getSavedVoiceURI();
+        var voice = window.speechSynthesis.getVoices().find(function (v) { return v.voiceURI === savedURI; });
+        if (voice) { u.voice = voice; u.lang = voice.lang; } else { u.lang = 'en-US'; }
         window.speechSynthesis.speak(u);
       });
       card.appendChild(style);
