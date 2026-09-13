@@ -716,6 +716,8 @@
       var data = parseJsonLoose(raw);
       renderSuggestions(Array.isArray(data) ? data : []);
       sendBtn.disabled = false;
+      thaiInput.value = '';
+      thaiInput.style.height = 'auto';
     }, function (err) {
       suggestionsEl.innerHTML = '<div class="suggestions-error">' + errorCopy(err) + '</div>';
       sendBtn.disabled = false;
