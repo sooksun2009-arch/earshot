@@ -298,6 +298,7 @@
   <div class="topbar-actions">
     <button id="listenBtn" class="btn btn-primary">เริ่มฟัง</button>
     <button id="downloadBtn" class="icon-btn" title="ดาวน์โหลดบทสนทนา">⬇</button>
+    <button id="clearHistoryBtn" class="icon-btn" title="ล้างประวัติทั้งหมด">🗑</button>
     <button id="settingsBtn" class="icon-btn" title="ตั้งค่า API key">⚙</button>
   </div>
 </header>
@@ -340,6 +341,7 @@
   var statusText = document.getElementById('statusText');
   var banner = document.getElementById('banner');
   var downloadBtn = document.getElementById('downloadBtn');
+  var clearHistoryBtn = document.getElementById('clearHistoryBtn');
   var settingsBtn = document.getElementById('settingsBtn');
   var settingsModal = document.getElementById('settingsModal');
   var apiKeyInput = document.getElementById('apiKeyInput');
@@ -462,11 +464,38 @@
     return h + ':' + m + ':' + s;
   }
 
+  var HISTORY_KEY = 'earshot_transcript_history';
+
   function seedExamples() {
     lines.push({ id: nextId++, en: 'Sorry, is now still a good time to talk?', th: 'ขอโทษนะครับ ตอนนี้ยังสะดวกคุยอยู่ไหม', thStatus: 'done', time: new Date(), example: true });
     lines.push({ id: nextId++, en: "Yes, go ahead — I'm listening.", th: 'ได้ครับ พูดได้เลย กำลังฟังอยู่', thStatus: 'done', time: new Date(), example: true });
   }
-  seedExamples();
+
+  function loadHistory() {
+    try {
+      var raw = localStorage.getItem(HISTORY_KEY);
+      if (!raw) return null;
+      var arr = JSON.parse(raw);
+      if (!Array.isArray(arr) || !arr.length) return null;
+      arr.forEach(function (l) { l.time = new Date(l.time); l.example = false; });
+      return arr;
+    } catch (e) { return null; }
+  }
+
+  function saveHistory() {
+    try {
+      var real = lines.filter(function (l) { return !l.example; });
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(real.slice(-200)));
+    } catch (e) {}
+  }
+
+  var savedHistory = loadHistory();
+  if (savedHistory) {
+    lines = savedHistory;
+    nextId = lines.reduce(function (max, l) { return Math.max(max, l.id); }, 0) + 1;
+  } else {
+    seedExamples();
+  }
 
   function clearExamplesIfAny() {
     if (lines.some(function (l) { return l.example; })) lines = [];
@@ -519,6 +548,7 @@
     }
 
     if (stickToBottom) feed.scrollTop = feed.scrollHeight;
+    saveHistory();
   }
   render();
 
@@ -755,6 +785,14 @@
       suggestionsEl.appendChild(card);
     });
   }
+
+  clearHistoryBtn.addEventListener('click', function () {
+    if (!lines.some(function (l) { return !l.example; })) return;
+    if (!window.confirm('ล้างประวัติบทสนทนาทั้งหมด? กู้คืนไม่ได้')) return;
+    lines = [];
+    seedExamples();
+    render();
+  });
 
   // --- Download transcript ---
 
