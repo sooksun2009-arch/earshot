@@ -309,6 +309,7 @@
     <button id="listenBtn" class="btn btn-primary">เริ่มฟัง</button>
     <button id="downloadBtn" class="icon-btn" title="ดาวน์โหลดบทสนทนา">⬇</button>
     <button id="clearHistoryBtn" class="icon-btn" title="ล้างประวัติทั้งหมด">🗑</button>
+    <button id="refreshBtn" class="icon-btn" title="โหลดเวอร์ชันล่าสุด (ข้ามแคช)">🔄</button>
     <button id="settingsBtn" class="icon-btn" title="ตั้งค่า API key">⚙</button>
   </div>
 </header>
@@ -356,6 +357,7 @@
   var banner = document.getElementById('banner');
   var downloadBtn = document.getElementById('downloadBtn');
   var clearHistoryBtn = document.getElementById('clearHistoryBtn');
+  var refreshBtn = document.getElementById('refreshBtn');
   var settingsBtn = document.getElementById('settingsBtn');
   var settingsModal = document.getElementById('settingsModal');
   var apiKeyInput = document.getElementById('apiKeyInput');
@@ -846,6 +848,10 @@
     lines = [];
     seedExamples();
     render();
+  });
+
+  refreshBtn.addEventListener('click', function () {
+    location.href = location.pathname + '?v=' + Date.now();
   });
 
   // --- Download transcript ---
